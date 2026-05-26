@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { ReactElement } from "react";
 import { ResultsView } from "@/components/results/ResultsView";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Recommandation — Mnémo",
@@ -7,7 +9,12 @@ export const metadata: Metadata = {
     "Votre stack de base mémorielle souveraine recommandée : 7 couches, radar 8 dimensions et carte de coûts sourcée.",
 };
 
-export default function ResultatsPage() {
+export default async function ResultatsPage(): Promise<ReactElement> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <main className="mx-auto max-w-5xl px-container-margin py-section-padding">
       <header className="mb-8">
@@ -18,7 +25,7 @@ export default function ResultatsPage() {
           Votre infrastructure souveraine
         </h1>
       </header>
-      <ResultsView />
+      <ResultsView userPresent={user !== null} />
     </main>
   );
 }

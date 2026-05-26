@@ -11,6 +11,7 @@ import { ExportButtons } from "@/components/results/ExportButtons";
 import { LayerStack } from "@/components/results/LayerStack";
 import { PriceFreshness } from "@/components/results/PriceFreshness";
 import { RadarChart } from "@/components/results/RadarChart";
+import { SaveConfigButton } from "@/components/results/SaveConfigButton";
 import { NumberStepper } from "@/components/wizard/NumberStepper";
 import {
   buildEnsemble,
@@ -49,7 +50,9 @@ function loadProfile(): Profile {
   return DEFAULT_PROFILE;
 }
 
-export function ResultsView(): ReactElement {
+type Props = { userPresent?: boolean };
+
+export function ResultsView({ userPresent = false }: Props): ReactElement {
   const [base, setBase] = useState<Profile | null>(null);
   const [volIndex, setVolIndex] = useState(1);
   const [users, setUsers] = useState(1);
@@ -212,6 +215,9 @@ export function ResultsView(): ReactElement {
 
       {/* Exit Escrow — bundle reproductible (F7, moat ①) */}
       <ExitEscrow profile={projected} recommendation={result} />
+
+      {/* Sauvegarder dans l'espace utilisateur (rails F9 / cercle) */}
+      <SaveConfigButton userPresent={userPresent} profile={projected} recommendation={result} />
 
       <Link
         href="/configurateur"

@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Mnémo — matrice de refonte du configurateur</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #faf8ff;
+    --surface: #ffffff;
+    --surface-2: #f1eefa;
+    --border: #d8d3e8;
+    --text: #131b2e;
+    --muted: #51546c;
+    --primary: #355cba;
+    --primary-soft: #e4ecff;
+    --ok: #006e22;
+    --warn: #b25e00;
+    --bad: #ba1a1a;
+    --rule-on: #e6f3ec;
+    --rule-off: #f5f0e4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header.page {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header.page h1 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  header.page p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  button, .btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    transition: background 120ms, border-color 120ms;
+  }
+  button:hover { background: var(--surface-2); }
+  button.primary {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  button.primary:hover { background: #2a4a99; }
+  button.danger { border-color: var(--bad); color: var(--bad); }
+  main { padding: 24px 32px 80px; max-width: 1280px; margin: 0 auto; }
+  section.block {
+    margin: 32px 0;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  section.block > h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+  section.block > p.lead {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th, td {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.was { color: var(--muted); text-decoration: line-through; max-width: 280px; }
+  td.now { font-weight: 500; max-width: 360px; }
+  td.cat { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-size: 12px; }
+  td input[type="text"], td textarea {
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 4px 6px;
+    border-radius: 6px;
+    font: inherit;
+    color: inherit;
+    resize: vertical;
+  }
+  td input[type="text"]:hover, td textarea:hover { border-color: var(--border); background: var(--surface-2); }
+  td input[type="text"]:focus, td textarea:focus { outline: none; border-color: var(--primary); background: white; }
+  td textarea { min-height: 36px; }
+  .rule-cell {
+    background: var(--rule-off);
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+  }
+  .rule-cell.on {
+    background: var(--rule-on);
+    color: var(--ok);
+  }
+  .rule-cell:hover { filter: brightness(0.97); }
+  .chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+  .chip.ok { background: var(--rule-on); color: var(--ok); }
+  .chip.warn { background: #fff1d4; color: var(--warn); }
+  .chip.bad { background: #ffd9d4; color: var(--bad); }
+  .chip.muted { background: var(--surface-2); color: var(--muted); }
+  details {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border-radius: 8px;
+  }
+  details > summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    user-select: none;
+  }
+  details > pre {
+    margin: 8px 0 0;
+    font-size: 12px;
+    overflow-x: auto;
+    line-height: 1.4;
+  }
+  .note {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--primary-soft);
+    border-radius: 8px;
+    color: #20356a;
+    font-size: 12px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+  .small { font-size: 12px; color: var(--muted); }
+  select {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font: inherit;
+    color: inherit;
+  }
+  .row-actions { white-space: nowrap; }
+  .footer-export {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
+</style>
+</head>
+<body>
+
+<header class="page">
+  <div>
+    <h1>Mnémo — matrice de refonte du configurateur</h1>
+    <p>Édite chaque cellule. Tout est sauvegardé en local (localStorage). Quand c’est bon, exporte le JSON — je l’utiliserai comme spec pour refondre le wizard.</p>
+  </div>
+  <div class="actions">
+    <button id="reset">Réinitialiser</button>
+    <button id="export-json" class="primary">Exporter JSON</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- A. VOCABULAIRE -->
+  <!-- ─────────────────────────────────────────── -->
+  <section class="block">
+    <h2>A. Vocabulaire — jargon à vulgariser</h2>
+    <p class="lead">Avant / après pour chaque label ou hint inintelligible. Clique sur les cellules pour éditer.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 14%">Endroit</th>
+          <th style="width: 30%">Actuel</th>
+          <th style="width: 30%">Proposé (édit)</th>
+          <th style="width: 26%">Sous-texte (optionnel)</th>
+        </tr>
+      </thead>
+      <tbody id="vocab-tbody"></tbody>
+    </table>
+    <div class="note">Le sous-texte apparaît sous le label dans le wizard, en texte gris. Garde-le court (≤ 1 ligne).</div>
+  </section>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- B. MATRICE CONDITIONNELLE -->
+  <!-- ─────────────────────────────────────────── -->
+  <section class="block">
+    <h2>B. Affichage conditionnel des modules</h2>
+    <p class="lead">Pour chaque module, sélectionne les conditions qui le rendent <strong>visible</strong>. Si aucune condition n’est cochée → module toujours visible. Plusieurs conditions cochées = OU logique.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 22%">Module (libellé proposé)</th>
+          <th>Conditions de visibilité (cocher = règle active)</th>
+          <th style="width: 16%">Si invisible</th>
+        </tr>
+      </thead>
+      <tbody id="cond-tbody"></tbody>
+    </table>
+    <div class="note">« Niveau 0 forcé » = le module reste dans le profil mais figé à 0 (cohérent avec moteur). « Masqué » = pas affiché du tout.</div>
+  </section>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- C. NIVEAUX PAR DÉFAUT -->
+  <!-- ─────────────────────────────────────────── -->
+  <section class="block">
+    <h2>C. Niveau initial recommandé par module</h2>
+    <p class="lead">Pour le mode Express et comme défaut intelligent dans le mode Expert. Choix : <code>0</code> (off), <code>1</code> (basique), <code>2</code> (moyen), <code>max</code>. Aujourd’hui tout est au max → c’est ce que tu critiques.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 22%">Module</th>
+          <th>Si preset = LIGHT</th>
+          <th>Si preset = MEDIUM</th>
+          <th>Si preset = HARD</th>
+          <th style="width: 14%">Plafond max</th>
+        </tr>
+      </thead>
+      <tbody id="default-tbody"></tbody>
+    </table>
+  </section>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- D. MODE EXPRESS -->
+  <!-- ─────────────────────────────────────────── -->
+  <section class="block">
+    <h2>D. Mode Express — 5 questions pour non-tech</h2>
+    <p class="lead">L’utilisateur choisit ces 5 questions et tout le reste se déduit. Le bouton de toggle Express/Expert sera placé en haut du wizard.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 5%">#</th>
+          <th style="width: 30%">Question</th>
+          <th style="width: 20%">Champ profil ciblé</th>
+          <th>Défauts intelligents hérités (le reste)</th>
+        </tr>
+      </thead>
+      <tbody id="express-tbody"></tbody>
+    </table>
+    <div class="note">Le champ profil ciblé est l’une des 16 variables du Profile actuel. Les défauts hérités sont écrits en texte libre, je les traduirai en code après validation.</div>
+  </section>
+
+  <!-- ─────────────────────────────────────────── -->
+  <!-- E. PRÉVISUALISATION JSON -->
+  <!-- ─────────────────────────────────────────── -->
+  <section class="block">
+    <h2>E. Prévisualisation de l’export</h2>
+    <p class="lead">État courant. Le bouton « Exporter JSON » télécharge ce contenu.</p>
+    <details open><summary>Voir le JSON</summary><pre id="preview"></pre></details>
+  </section>
+
+</main>
+
+<div class="footer-export">
+  <button id="export-json-2" class="primary">Exporter JSON</button>
+</div>
+
+<script>
+'use strict';
+
+// ───────────────────────────────────────────────────────────────────────
+// Données initiales (valeurs par défaut proposées — toutes éditables)
+// ───────────────────────────────────────────────────────────────────────
+
+const VOCAB_INIT = [
+  { where: "Étape 2", was: "Perspectives / voix", now: "Combien de personnes contribuent à la base ?", hint: "Vous seul, une équipe, plusieurs clients" },
+  { where: "Étape 3", was: "Régimes applicables (au moins un)", now: "Réglementations qui s’appliquent à vous", hint: "Au moins une — cochez « Aucun » si vraiment aucune" },
+  { where: "Étape 3", was: "AI Act", now: "AI Act", hint: "Union européenne — régulation de l’IA" },
+  { where: "Étape 3", was: "HIPAA", now: "HIPAA", hint: "États-Unis — données de santé" },
+  { where: "Étape 3", was: "CNDP", now: "CNDP", hint: "Maroc — protection des données" },
+  { where: "Étape 3", was: "RGPD", now: "RGPD", hint: "Union européenne — protection des données" },
+  { where: "Étape 3", was: "Audit (traçabilité signée)", now: "Pouvoir prouver qui a fait quoi", hint: "Pour audit interne, audit client ou compliance" },
+  { where: "Étape 3", was: "Bitemporalité (qui savait quoi quand)", now: "Garder l’historique de vos décisions dans le temps", hint: "Pouvoir dire : « à cette date, je pensais X »" },
+  { where: "Étape 4", was: "Niveau technique", now: "Qui va gérer techniquement la base ?", hint: "Vous-même, un développeur, un DevOps externe…" },
+  { where: "Étape 4", was: "Latence tolérée", now: "Vitesse de réponse souhaitée", hint: "Plus c’est rapide, plus c’est cher" },
+  { where: "Étape 4", was: "Requêtes par jour", now: "Combien de fois la base sera interrogée par jour ?", hint: "Vous + vos clients + vos automatisations" },
+  { where: "Étape 5", was: "Bisect épistémique", now: "Retrouver depuis quand votre pensée a évolué", hint: "« À partir de quand je pensais autrement sur X ? »" },
+  { where: "Étape 5", was: "Reversal entries (intégrité par construction)", now: "Corrections tracées au lieu d’écrasement", hint: "Quand vous corrigez, l’ancienne version reste visible avec l’étiquette « corrigé »" },
+  { where: "Étape 5", was: "Pre-registration horodatée", now: "S’engager sur une hypothèse avant la décision", hint: "Méthode contre le biais de confirmation (sciences, qualité, audit)" },
+  { where: "Étape 5", was: "MEL — Minimum Equipment List", now: "Plan de continuité en cas de panne", hint: "« Que faire si ce composant tombe ? » écrit AVANT l’incident" },
+  { where: "Étape 5", was: "Conflict checking automatique", now: "Détection automatique de conflits d’intérêts", hint: "Empêche de conseiller deux clients adversaires sans le savoir" },
+];
+
+// Conditions disponibles pour la matrice B.
+// Chaque clé = id de condition ; chaque module a un sous-ensemble actif.
+const CONDITIONS = [
+  { id: "bitemporal_ne_no",     label: "Historique des décisions ≥ Souhaité" },
+  { id: "audit_ne_no",          label: "Pouvoir prouver qui a fait quoi ≥ Souhaité" },
+  { id: "sensitivity_high",     label: "Sensibilité ≥ Confidentiel" },
+  { id: "activity_regulated",   label: "Activité = Cabinet régulé" },
+  { id: "activity_agency",      label: "Activité = Agence / programme" },
+  { id: "voices_multi",         label: "Plusieurs personnes/clients contribuent" },
+  { id: "volume_ge_10to100",    label: "Volume ≥ 10 Go" },
+  { id: "reqperday_ge_lt1k",    label: "≥ 1 000 requêtes/jour" },
+  { id: "techlevel_ne_none",    label: "Il y a quelqu’un de technique côté client" },
+  { id: "regulation_strict",    label: "Régulation stricte (HIPAA / secret pro)" },
+];
+
+const COND_INIT = [
+  { id: "bisect",   label: "Retrouver depuis quand votre pensée a évolué",
+    visibleWhen: ["bitemporal_ne_no"], whenHidden: "hidden" },
+  { id: "reversal", label: "Corrections tracées au lieu d’écrasement",
+    visibleWhen: ["audit_ne_no", "sensitivity_high"], whenHidden: "level0" },
+  { id: "prereg",   label: "S’engager sur une hypothèse avant la décision",
+    visibleWhen: [], whenHidden: "hidden" }, // toujours visible
+  { id: "mel",      label: "Plan de continuité en cas de panne",
+    visibleWhen: ["volume_ge_10to100", "reqperday_ge_lt1k", "sensitivity_high"], whenHidden: "hidden" },
+  { id: "conflict", label: "Détection automatique de conflits d’intérêts",
+    visibleWhen: ["activity_regulated", "activity_agency", "voices_multi"], whenHidden: "hidden" },
+];
+
+const DEFAULT_INIT = [
+  { id: "bisect",   light: 0, medium: 1, hard: 2, cap: 3 },
+  { id: "reversal", light: 0, medium: 1, hard: 3, cap: 3 },
+  { id: "prereg",   light: 0, medium: 1, hard: 2, cap: 3 },
+  { id: "mel",      light: 0, medium: 1, hard: 2, cap: 4 },
+  { id: "conflict", light: 0, medium: 0, hard: 2, cap: 4 },
+];
+
+const EXPRESS_INIT = [
+  { n: 1, question: "Vous êtes ?", target: "activity",
+    fallback: "Détermine la plupart des défauts. Cabinet régulé → bitemporal/audit/sensitivity élevés. Freelance → tout au plus simple." },
+  { n: 2, question: "Combien de personnes contribuent à la base ?", target: "voices",
+    fallback: "Solo → désactive le module conflict. Multi → active conflict niveau 1." },
+  { n: 3, question: "Vos données sont…", target: "sensitivity",
+    fallback: "Confidentiel/Secret → active reversal et MEL au niveau 1. Public/Interne → désactive reversal." },
+  { n: 4, question: "Votre budget mensuel ?", target: "budget",
+    fallback: "< 50 € → preset LIGHT forcé, modules à 0. > 500 € → autorise preset HARD si justifié." },
+  { n: 5, question: "Qui va gérer techniquement ?", target: "techLevel",
+    fallback: "Non technique → masque MEL et bisect, désactive pre-registration. Hybride/DevOps → débloque tout." },
+];
+
+// ───────────────────────────────────────────────────────────────────────
+// Storage + helpers
+// ───────────────────────────────────────────────────────────────────────
+
+const KEY = "mnemo.wizard-refonte-matrix.v1";
+
+/** @returns {{vocab: typeof VOCAB_INIT, cond: typeof COND_INIT, defaults: typeof DEFAULT_INIT, express: typeof EXPRESS_INIT}} */
+function loadState() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return { vocab: VOCAB_INIT, cond: COND_INIT, defaults: DEFAULT_INIT, express: EXPRESS_INIT };
+}
+function saveState(s) {
+  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (_) {}
+  renderPreview();
+}
+
+let STATE = loadState();
+
+// ───────────────────────────────────────────────────────────────────────
+// A. VOCAB
+// ───────────────────────────────────────────────────────────────────────
+
+function renderVocab() {
+  const tbody = document.getElementById("vocab-tbody");
+  tbody.innerHTML = "";
+  STATE.vocab.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="cat">${row.where}</td>
+      <td class="was">${row.was}</td>
+      <td class="now"><textarea data-i="${i}" data-k="now">${row.now}</textarea></td>
+      <td><textarea data-i="${i}" data-k="hint" placeholder="(optionnel)">${row.hint || ""}</textarea></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll("textarea").forEach((el) => {
+    el.addEventListener("input", () => {
+      const i = +el.dataset.i;
+      const k = el.dataset.k;
+      STATE.vocab[i][k] = el.value;
+      saveState(STATE);
+    });
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// B. CONDITIONS
+// ───────────────────────────────────────────────────────────────────────
+
+function renderCond() {
+  const tbody = document.getElementById("cond-tbody");
+  tbody.innerHTML = "";
+  STATE.cond.forEach((row, i) => {
+    const cells = CONDITIONS.map((c) => {
+      const on = row.visibleWhen.includes(c.id);
+      return `<span class="chip ${on ? "ok" : "muted"}" data-i="${i}" data-c="${c.id}" style="cursor:pointer;margin:2px;">${on ? "✓" : "○"} ${c.label}</span>`;
+    }).join("");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>
+        <input type="text" data-i="${i}" data-k="label" value="${row.label}" />
+        <div class="small">id: <code>${row.id}</code></div>
+      </td>
+      <td>${cells}</td>
+      <td>
+        <select data-i="${i}" data-k="whenHidden">
+          <option value="hidden" ${row.whenHidden === "hidden" ? "selected" : ""}>Masqué</option>
+          <option value="level0" ${row.whenHidden === "level0" ? "selected" : ""}>Niveau 0 forcé</option>
+        </select>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll(".chip").forEach((el) => {
+    el.addEventListener("click", () => {
+      const i = +el.dataset.i;
+      const c = el.dataset.c;
+      const arr = STATE.cond[i].visibleWhen;
+      const idx = arr.indexOf(c);
+      if (idx >= 0) arr.splice(idx, 1); else arr.push(c);
+      saveState(STATE);
+      renderCond();
+    });
+  });
+  tbody.querySelectorAll("input, select").forEach((el) => {
+    el.addEventListener("input", () => {
+      const i = +el.dataset.i;
+      const k = el.dataset.k;
+      STATE.cond[i][k] = el.value;
+      saveState(STATE);
+    });
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// C. DEFAULTS
+// ───────────────────────────────────────────────────────────────────────
+
+function renderDefaults() {
+  const tbody = document.getElementById("default-tbody");
+  tbody.innerHTML = "";
+  STATE.defaults.forEach((row, i) => {
+    const label = STATE.cond.find((c) => c.id === row.id)?.label || row.id;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${label} <div class="small"><code>${row.id}</code></div></td>
+      <td><input type="number" min="0" max="${row.cap}" value="${row.light}" data-i="${i}" data-k="light" style="width:64px;padding:4px;border:1px solid var(--border);border-radius:6px;"/></td>
+      <td><input type="number" min="0" max="${row.cap}" value="${row.medium}" data-i="${i}" data-k="medium" style="width:64px;padding:4px;border:1px solid var(--border);border-radius:6px;"/></td>
+      <td><input type="number" min="0" max="${row.cap}" value="${row.hard}" data-i="${i}" data-k="hard" style="width:64px;padding:4px;border:1px solid var(--border);border-radius:6px;"/></td>
+      <td class="cat">${row.cap}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll("input").forEach((el) => {
+    el.addEventListener("input", () => {
+      const i = +el.dataset.i;
+      const k = el.dataset.k;
+      STATE.defaults[i][k] = +el.value;
+      saveState(STATE);
+    });
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// D. EXPRESS
+// ───────────────────────────────────────────────────────────────────────
+
+const PROFILE_FIELDS = [
+  "activity", "zone", "users", "contentTypes", "volume", "growth",
+  "regulations", "sensitivity", "audit", "bitemporal",
+  "techLevel", "budget", "reqPerDay", "latency", "voices", "modules",
+];
+
+function renderExpress() {
+  const tbody = document.getElementById("express-tbody");
+  tbody.innerHTML = "";
+  STATE.express.forEach((row, i) => {
+    const opts = PROFILE_FIELDS.map((f) => `<option ${f === row.target ? "selected" : ""}>${f}</option>`).join("");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="cat">${row.n}</td>
+      <td><textarea data-i="${i}" data-k="question">${row.question}</textarea></td>
+      <td><select data-i="${i}" data-k="target">${opts}</select></td>
+      <td><textarea data-i="${i}" data-k="fallback">${row.fallback}</textarea></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll("textarea, select").forEach((el) => {
+    el.addEventListener("input", () => {
+      const i = +el.dataset.i;
+      const k = el.dataset.k;
+      STATE.express[i][k] = el.value;
+      saveState(STATE);
+    });
+  });
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// E. PREVIEW / EXPORT
+// ───────────────────────────────────────────────────────────────────────
+
+function renderPreview() {
+  document.getElementById("preview").textContent = JSON.stringify(STATE, null, 2);
+}
+
+function downloadJson() {
+  const blob = new Blob([JSON.stringify(STATE, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `mnemo-wizard-matrix-${new Date().toISOString().slice(0,16).replace(/[:T]/g, "-")}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("export-json").addEventListener("click", downloadJson);
+document.getElementById("export-json-2").addEventListener("click", downloadJson);
+document.getElementById("reset").addEventListener("click", () => {
+  if (!confirm("Réinitialiser toute la matrice aux valeurs par défaut ?")) return;
+  STATE = { vocab: VOCAB_INIT, cond: COND_INIT, defaults: DEFAULT_INIT, express: EXPRESS_INIT };
+  saveState(STATE);
+  renderAll();
+});
+
+function renderAll() {
+  renderVocab();
+  renderCond();
+  renderDefaults();
+  renderExpress();
+  renderPreview();
+}
+
+renderAll();
+
+</script>
+
+</body>
+</html>
