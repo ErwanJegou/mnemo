@@ -144,7 +144,7 @@ export default async function SolutionPage({
           steps={steps}
           bricks={bricksRes.data}
           ratings={ratingsRes.data}
-          defaultVolumes={solution.volume_assumptions ?? {}}
+          defaultVolumes={solution.volume_assumptions}
         />
       </section>
 

@@ -123,7 +123,7 @@ export default async function HomePage(): Promise<ReactElement> {
                           steps: stepsBySolution.get(s.id) ?? [],
                           bricks: bricksRes.data,
                           ratings: ratingsRes.data,
-                          volumes: s.volume_assumptions ?? {},
+                          volumes: s.volume_assumptions,
                         });
                         return (
                           <div className="flex flex-wrap items-center gap-3 pt-2 font-mono text-xs text-on-surface-variant">
