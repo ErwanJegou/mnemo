@@ -76,6 +76,7 @@ export function parseSolutionForm(fd: FormData): ParseResult<SolutionInsert> {
       audience: strOrNull(fd, "audience"),
       complexity: complexity as SolutionComplexity,
       total_price_estimate_eur: floatOrNull(fd, "total_price_estimate_eur"),
+      volume_assumptions: {}, // TODO(Task 5) : parser les hypothèses de volume depuis le formulaire
       estimated_setup_minutes: intOrNull(fd, "estimated_setup_minutes"),
       status: status as ComponentStatus,
       hero_emoji: strOrNull(fd, "hero_emoji"),

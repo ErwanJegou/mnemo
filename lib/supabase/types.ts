@@ -198,6 +198,7 @@ export type SolutionRow = {
   audience: string | null;
   complexity: SolutionComplexity;
   total_price_estimate_eur: number | null;
+  volume_assumptions: Record<string, number>;
   estimated_setup_minutes: number | null;
   status: ComponentStatus;
   hero_emoji: string | null;
