@@ -57,10 +57,12 @@ export const VOLUME_UNIT_SLIDER_BOUNDS: Record<VolumeKey, SliderBounds> = {
 
 /** Retourne le libellé UI pour une clé de volume, ou la clé brute si inconnue. */
 export function labelFor(key: string): string {
-  return (VOLUME_UNIT_LABELS as Record<string, string | undefined>)[key] ?? key;
+  const labels: Record<string, string | undefined> = VOLUME_UNIT_LABELS;
+  return labels[key] ?? key;
 }
 
 /** Retourne les bornes slider pour une clé de volume, ou undefined si inconnue. */
 export function boundsFor(key: string): SliderBounds | undefined {
-  return (VOLUME_UNIT_SLIDER_BOUNDS as Record<string, SliderBounds | undefined>)[key];
+  const bounds: Record<string, SliderBounds | undefined> = VOLUME_UNIT_SLIDER_BOUNDS;
+  return bounds[key];
 }
