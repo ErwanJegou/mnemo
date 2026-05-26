@@ -14,12 +14,7 @@ import {
   formatScore,
 } from "@/lib/catalogue/labels";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const EUR = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
+import { SolutionEstimator } from "@/components/solutions/SolutionEstimator";
 
 const EUR_PRECISE = new Intl.NumberFormat("fr-FR", {
   style: "currency",
@@ -135,9 +130,6 @@ export default async function SolutionPage({
             </p>
             <div className="flex flex-wrap items-center gap-4 pt-2 font-mono text-body-sm text-on-surface-variant">
               {solution.audience !== null ? <span>👥 {solution.audience}</span> : null}
-              {solution.total_price_estimate_eur !== null ? (
-                <span>≈ {EUR.format(solution.total_price_estimate_eur)}/mois</span>
-              ) : null}
               {solution.estimated_setup_minutes !== null ? (
                 <span>⏱ ~{solution.estimated_setup_minutes} min de setup</span>
               ) : null}
@@ -145,6 +137,15 @@ export default async function SolutionPage({
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-container-margin pb-4">
+        <SolutionEstimator
+          steps={steps}
+          bricks={bricksRes.data}
+          ratings={ratingsRes.data}
+          defaultVolumes={solution.volume_assumptions ?? {}}
+        />
       </section>
 
       <section className="mx-auto max-w-5xl px-container-margin pb-16">
