@@ -9,7 +9,9 @@ describe("ResultsView", () => {
 
   it("affiche le preset et la carte de coûts pour le profil par défaut", async () => {
     render(<ResultsView />);
-    expect(await screen.findByText("Preset : LIGHT")).toBeInTheDocument();
+    // Nouveau profil par défaut (freelance solo, données internes) → MEDIUM
+    // (sweet spot freelance/PME/agence selon decidePreset).
+    expect(await screen.findByText("Preset : MEDIUM")).toBeInTheDocument();
     expect(screen.getByText("Carte de coûts")).toBeInTheDocument();
     expect(screen.getByText("Stack recommandée")).toBeInTheDocument();
   });

@@ -57,12 +57,12 @@ export const CONTENT_TYPE_OPTIONS: Option<ContentType>[] = [
 ];
 
 export const REGULATION_OPTIONS: Option<Regulation>[] = [
-  { value: "rgpd", label: "RGPD", hint: "Union européenne" },
-  { value: "cndp", label: "CNDP", hint: "Maroc — loi 09-08" },
-  { value: "aiact", label: "AI Act", hint: "Union européenne" },
-  { value: "hipaa", label: "HIPAA", hint: "Santé (US)" },
-  { value: "secret-pro", label: "Secret professionnel" },
-  { value: "none", label: "Aucun" },
+  { value: "rgpd", label: "RGPD", hint: "Protection des données (Union européenne)" },
+  { value: "cndp", label: "CNDP", hint: "Protection des données (Maroc, loi 09-08)" },
+  { value: "aiact", label: "AI Act", hint: "Régulation de l'IA (Union européenne)" },
+  { value: "hipaa", label: "HIPAA", hint: "Données de santé (États-Unis)" },
+  { value: "secret-pro", label: "Secret professionnel", hint: "Avocats, médecins, notaires…" },
+  { value: "none", label: "Aucun", hint: "Pas de cadre réglementaire spécifique" },
 ];
 
 export const SENSITIVITY_OPTIONS: Option<Sensitivity>[] = [
@@ -79,10 +79,10 @@ export const REQUIREMENT_OPTIONS: Option<Requirement>[] = [
 ];
 
 export const TECH_LEVEL_OPTIONS: Option<TechLevel>[] = [
-  { value: "none", label: "Non technique" },
-  { value: "dev", label: "Développeur" },
-  { value: "hybrid", label: "Hybride", hint: "Dev + ops léger" },
-  { value: "devops", label: "DevOps confirmé" },
+  { value: "none", label: "Personne de technique", hint: "Vous (non développeur) seul" },
+  { value: "dev", label: "Un développeur", hint: "Vous savez ou un dev vous accompagne" },
+  { value: "hybrid", label: "Dev + un peu d'ops", hint: "Vous bidouillez aussi de l'infra" },
+  { value: "devops", label: "DevOps confirmé", hint: "Vous gérez sereinement la prod" },
 ];
 
 export const BUDGET_OPTIONS: Option<Budget>[] = [
@@ -101,13 +101,13 @@ export const REQ_PER_DAY_OPTIONS: Option<ReqPerDay>[] = [
 ];
 
 export const LATENCY_OPTIONS: Option<Latency>[] = [
-  { value: "fast", label: "Rapide", hint: "< 2 s" },
-  { value: "acceptable", label: "Acceptable", hint: "2 – 5 s" },
-  { value: "relaxed", label: "Tolérante", hint: "> 5 s" },
+  { value: "fast", label: "Rapide", hint: "Réponse en moins de 2 secondes (plus cher)" },
+  { value: "acceptable", label: "Acceptable", hint: "2 à 5 secondes" },
+  { value: "relaxed", label: "Tolérante", hint: "Plus de 5 secondes (le moins cher)" },
 ];
 
 export const VOICES_OPTIONS: Option<Voices>[] = [
-  { value: "solo", label: "Solo", hint: "Une voix" },
-  { value: "multi", label: "Multi", hint: "2 – 5 voix" },
-  { value: "many", label: "Nombreuses", hint: "> 5 voix" },
+  { value: "solo", label: "Vous seul", hint: "Une seule personne contribue à la base" },
+  { value: "multi", label: "Une équipe", hint: "2 à 5 personnes contribuent" },
+  { value: "many", label: "Plusieurs clients", hint: "Plus de 5 contributeurs ou clients différents" },
 ];

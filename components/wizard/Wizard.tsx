@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactElement, type ReactNode } from "react";
+import { useEffect, useState, type ReactElement, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { CheckboxCards } from "@/components/wizard/CheckboxCards";
+import { ExpressForm } from "@/components/wizard/ExpressForm";
 import { ModuleSlider } from "@/components/wizard/ModuleSlider";
 import { NumberStepper } from "@/components/wizard/NumberStepper";
 import { RadioCards } from "@/components/wizard/RadioCards";
 import { MODULES, PRESET_PROFILES, decidePreset, recommend } from "@/lib/engine";
 import { useWizardProfile } from "@/hooks/useWizardProfile";
 import { cn } from "@/lib/utils/cn";
+import { isModuleVisible } from "@/lib/wizard/conditions";
+import { buildExpressProfile, type ExpressAnswers } from "@/lib/wizard/express";
 import {
   ACTIVITY_OPTIONS,
   BUDGET_OPTIONS,
@@ -28,19 +31,33 @@ import {
   ZONE_OPTIONS,
 } from "@/lib/wizard/options";
 
+const MODE_STORAGE_KEY = "mnemo:wizard-mode:v1";
+type Mode = "express" | "expert";
+
 const STEPS = [
   { title: "Activité & échelle", description: "Qui êtes-vous et à quelle échelle ?" },
-  { title: "Contenu & usage", description: "Quelle matière et quel usage ?" },
+  { title: "Contenu & contributeurs", description: "Quelle matière et combien de voix ?" },
   { title: "Conformité & sensibilité", description: "Quelles contraintes réglementaires ?" },
   { title: "Contraintes techniques", description: "Compétences, budget, charge." },
-  { title: "Modules avancés", description: "Mécanismes optionnels de fiabilité." },
+  { title: "Options avancées", description: "Mécanismes optionnels — n'apparaissent que s'ils ont un sens pour votre profil." },
   { title: "Récapitulatif", description: "Votre profil et le preset retenu." },
 ] as const;
 
-function Field({ label, children }: { label: string; children: ReactNode }): ReactElement {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}): ReactElement {
   return (
     <fieldset className="border-0 p-0">
-      <legend className="mb-2 text-label-caps uppercase text-on-surface-variant">{label}</legend>
+      <legend className="mb-1 text-label-caps uppercase text-on-surface-variant">{label}</legend>
+      {hint !== undefined ? (
+        <p className="mb-2 text-body-sm text-on-surface-variant">{hint}</p>
+      ) : null}
       {children}
     </fieldset>
   );
@@ -57,24 +74,158 @@ export function Wizard(): ReactElement {
     loadProfile,
   } = useWizardProfile();
   const [step, setStep] = useState(0);
+  const [mode, setMode] = useState<Mode>("express");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(MODE_STORAGE_KEY);
+      if (saved === "expert" || saved === "express") setMode(saved);
+    } catch {
+      /* localStorage indisponible : on garde le défaut Express. */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODE_STORAGE_KEY, mode);
+    } catch {
+      /* sans effet */
+    }
+  }, [mode]);
 
   if (!hydrated) {
     return <p className="p-8 text-center text-on-surface-variant">Chargement…</p>;
   }
 
+  const decision = decidePreset(profile);
+  const result = recommend(profile);
+
+  const expressAnswers: ExpressAnswers = {
+    activity: profile.activity,
+    voices: profile.voices,
+    sensitivity: profile.sensitivity,
+    budget: profile.budget,
+    techLevel: profile.techLevel,
+  };
+
+  const onExpressChange = <K extends keyof ExpressAnswers>(key: K, value: ExpressAnswers[K]): void => {
+    const nextAnswers: ExpressAnswers = { ...expressAnswers, [key]: value };
+    loadProfile(buildExpressProfile(nextAnswers));
+  };
+
+  function ModeToggle(): ReactElement {
+    return (
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div
+          role="tablist"
+          aria-label="Mode du configurateur"
+          className="inline-flex rounded-full border border-outline-variant bg-surface-container-lowest p-1"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "express"}
+            onClick={() => setMode("express")}
+            className={cn(
+              "rounded-full px-4 py-1.5 text-label-caps uppercase transition-colors",
+              mode === "express"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:text-on-surface",
+            )}
+          >
+            Express · 5 questions
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "expert"}
+            onClick={() => setMode("expert")}
+            className={cn(
+              "rounded-full px-4 py-1.5 text-label-caps uppercase transition-colors",
+              mode === "expert"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:text-on-surface",
+            )}
+          >
+            Expert · 16 paramètres
+          </button>
+        </div>
+        <span className="font-mono text-body-sm text-on-surface-variant">
+          Preset : {decision.preset} · ≈ {result.totalCost} €/mois
+        </span>
+      </div>
+    );
+  }
+
+  function PresetProfilesRow(): ReactElement {
+    return (
+      <div className="mt-8">
+        <p className="mb-2 text-label-caps uppercase text-on-surface-variant">
+          Ou partir d’un profil-type
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PRESET_PROFILES.map((preset) => (
+            <Button
+              key={preset.name}
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                loadProfile(preset.profile);
+                setStep(0);
+              }}
+            >
+              {preset.name}
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Mode Express ──────────────────────────────────────────────────────
+  if (mode === "express") {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <ModeToggle />
+        <Card>
+          <h2 className="font-display text-headline-md text-on-surface">5 questions pour démarrer</h2>
+          <p className="mt-1 text-body-md text-on-surface-variant">
+            Tout le reste est rempli automatiquement par des défauts intelligents. Vous pourrez
+            tout ajuster en passant en mode Expert.
+          </p>
+          <div className="mt-6">
+            <ExpressForm answers={expressAnswers} onChange={onExpressChange} />
+          </div>
+        </Card>
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <p className="max-w-xl text-body-sm text-on-surface-variant">{decision.reason}</p>
+          <Link
+            href="/resultats"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-body-md font-medium text-on-primary transition-colors hover:bg-primary-container"
+          >
+            Voir ma recommandation
+          </Link>
+        </div>
+
+        <PresetProfilesRow />
+      </div>
+    );
+  }
+
+  // ─── Mode Expert ───────────────────────────────────────────────────────
   const stepValid =
     (step === 1 && profile.contentTypes.length === 0) ||
     (step === 2 && profile.regulations.length === 0)
       ? false
       : true;
-
   const isLast = step === STEPS.length - 1;
-  const decision = decidePreset(profile);
-  const result = recommend(profile);
+  const visibleModules = MODULES.filter((m) => isModuleVisible(m.id, profile));
+  const hiddenCount = MODULES.length - visibleModules.length;
 
   return (
     <div className="mx-auto max-w-3xl">
-      {/* Indicateur d'étapes */}
+      <ModeToggle />
       <ol className="mb-6 flex flex-wrap gap-2">
         {STEPS.map((s, i) => (
           <li key={s.title}>
@@ -101,25 +252,33 @@ export function Wizard(): ReactElement {
         <div className="mt-6 space-y-6">
           {step === 0 ? (
             <>
-              <Field label="Activité">
+              <Field label="Votre activité">
                 <RadioCards
                   value={profile.activity}
                   options={ACTIVITY_OPTIONS}
                   onChange={(v) => setField("activity", v)}
                 />
               </Field>
-              <Field label="Zone d'hébergement">
-                <RadioCards value={profile.zone} options={ZONE_OPTIONS} onChange={(v) => setField("zone", v)} />
+              <Field label="Zone d'hébergement préférée">
+                <RadioCards
+                  value={profile.zone}
+                  options={ZONE_OPTIONS}
+                  onChange={(v) => setField("zone", v)}
+                />
               </Field>
-              <Field label="Nombre d'utilisateurs">
+              <Field label="Nombre d'utilisateurs de la base">
                 <NumberStepper
                   label="Nombre d'utilisateurs"
                   value={profile.users}
                   onChange={(v) => setField("users", v)}
                 />
               </Field>
-              <Field label="Croissance attendue">
-                <RadioCards value={profile.growth} options={GROWTH_OPTIONS} onChange={(v) => setField("growth", v)} />
+              <Field label="Croissance attendue sur 12 mois">
+                <RadioCards
+                  value={profile.growth}
+                  options={GROWTH_OPTIONS}
+                  onChange={(v) => setField("growth", v)}
+                />
               </Field>
             </>
           ) : null}
@@ -134,17 +293,25 @@ export function Wizard(): ReactElement {
                 />
               </Field>
               <Field label="Volume de données">
-                <RadioCards value={profile.volume} options={VOLUME_OPTIONS} onChange={(v) => setField("volume", v)} />
+                <RadioCards
+                  value={profile.volume}
+                  options={VOLUME_OPTIONS}
+                  onChange={(v) => setField("volume", v)}
+                />
               </Field>
-              <Field label="Perspectives / voix">
-                <RadioCards value={profile.voices} options={VOICES_OPTIONS} onChange={(v) => setField("voices", v)} />
+              <Field label="Combien de personnes contribuent à la base ?">
+                <RadioCards
+                  value={profile.voices}
+                  options={VOICES_OPTIONS}
+                  onChange={(v) => setField("voices", v)}
+                />
               </Field>
             </>
           ) : null}
 
           {step === 2 ? (
             <>
-              <Field label="Régimes applicables (au moins un)">
+              <Field label="Réglementations qui s'appliquent (au moins une)">
                 <CheckboxCards
                   values={profile.regulations}
                   options={REGULATION_OPTIONS}
@@ -158,10 +325,20 @@ export function Wizard(): ReactElement {
                   onChange={(v) => setField("sensitivity", v)}
                 />
               </Field>
-              <Field label="Audit (traçabilité signée)">
-                <RadioCards value={profile.audit} options={REQUIREMENT_OPTIONS} onChange={(v) => setField("audit", v)} />
+              <Field
+                label="Pouvoir prouver qui a fait quoi"
+                hint="Pour audit interne, audit client ou compliance"
+              >
+                <RadioCards
+                  value={profile.audit}
+                  options={REQUIREMENT_OPTIONS}
+                  onChange={(v) => setField("audit", v)}
+                />
               </Field>
-              <Field label="Bitemporalité (qui savait quoi quand)">
+              <Field
+                label="Garder l'historique des décisions dans le temps"
+                hint="Pouvoir dire : « à cette date, je pensais X »"
+              >
                 <RadioCards
                   value={profile.bitemporal}
                   options={REQUIREMENT_OPTIONS}
@@ -173,39 +350,61 @@ export function Wizard(): ReactElement {
 
           {step === 3 ? (
             <>
-              <Field label="Niveau technique">
+              <Field label="Qui va gérer techniquement la base ?">
                 <RadioCards
                   value={profile.techLevel}
                   options={TECH_LEVEL_OPTIONS}
                   onChange={(v) => setField("techLevel", v)}
                 />
               </Field>
-              <Field label="Budget mensuel">
-                <RadioCards value={profile.budget} options={BUDGET_OPTIONS} onChange={(v) => setField("budget", v)} />
+              <Field label="Budget mensuel cible">
+                <RadioCards
+                  value={profile.budget}
+                  options={BUDGET_OPTIONS}
+                  onChange={(v) => setField("budget", v)}
+                />
               </Field>
-              <Field label="Requêtes par jour">
+              <Field label="Combien de fois la base sera interrogée par jour ?">
                 <RadioCards
                   value={profile.reqPerDay}
                   options={REQ_PER_DAY_OPTIONS}
                   onChange={(v) => setField("reqPerDay", v)}
                 />
               </Field>
-              <Field label="Latence tolérée">
-                <RadioCards value={profile.latency} options={LATENCY_OPTIONS} onChange={(v) => setField("latency", v)} />
+              <Field label="Vitesse de réponse souhaitée">
+                <RadioCards
+                  value={profile.latency}
+                  options={LATENCY_OPTIONS}
+                  onChange={(v) => setField("latency", v)}
+                />
               </Field>
             </>
           ) : null}
 
           {step === 4 ? (
             <div className="space-y-4">
-              {MODULES.map((mod) => (
-                <ModuleSlider
-                  key={mod.id}
-                  module={mod}
-                  level={profile.modules[mod.id] ?? 0}
-                  onChange={(level) => setModuleLevel(mod.id, level)}
-                />
-              ))}
+              {visibleModules.length === 0 ? (
+                <p className="text-body-sm text-on-surface-variant">
+                  Aucune option avancée n’est pertinente pour le profil que vous avez décrit.
+                  Vous pouvez passer à l’étape suivante.
+                </p>
+              ) : (
+                visibleModules.map((mod) => (
+                  <ModuleSlider
+                    key={mod.id}
+                    module={mod}
+                    level={profile.modules[mod.id] ?? 0}
+                    onChange={(level) => setModuleLevel(mod.id, level)}
+                  />
+                ))
+              )}
+              {hiddenCount > 0 ? (
+                <p className="text-body-sm text-on-surface-variant">
+                  {hiddenCount} option{hiddenCount > 1 ? "s sont masquées" : " est masquée"} parce
+                  qu’elle{hiddenCount > 1 ? "s" : ""} ne correspond{hiddenCount > 1 ? "ent" : ""}{" "}
+                  pas à votre profil — modifiez les étapes précédentes pour les débloquer.
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -245,9 +444,12 @@ export function Wizard(): ReactElement {
         </div>
       </Card>
 
-      {/* Navigation */}
       <div className="mt-6 flex items-center justify-between gap-3">
-        <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+        <Button
+          variant="ghost"
+          onClick={() => setStep((s) => Math.max(0, s - 1))}
+          disabled={step === 0}
+        >
           Précédent
         </Button>
 
@@ -265,27 +467,7 @@ export function Wizard(): ReactElement {
         )}
       </div>
 
-      {/* Profils-types */}
-      <div className="mt-8">
-        <p className="mb-2 text-label-caps uppercase text-on-surface-variant">
-          Ou partir d’un profil-type
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {PRESET_PROFILES.map((preset) => (
-            <Button
-              key={preset.name}
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                loadProfile(preset.profile);
-                setStep(0);
-              }}
-            >
-              {preset.name}
-            </Button>
-          ))}
-        </div>
-      </div>
+      <PresetProfilesRow />
     </div>
   );
 }

@@ -15,7 +15,7 @@ export function buildLayers(preset: Preset, profile: Profile): Layer[] {
     id: 0,
     name: "Contrat commun (frontmatter YAML)",
     color: COLORS[0],
-    choice: "Frontmatter universel Xavier v1.0.0",
+    choice: "Frontmatter YAML universel (schéma versionné)",
     cost: 0,
     note: "JSON Schema, triple validation, champ circle pivot RLS",
     alternatives: "Schema custom (déconseillé)",
@@ -130,13 +130,13 @@ export function buildLayers(preset: Preset, profile: Profile): Layer[] {
           : "Postgres 16 + pgvector (Supabase free tier)"
         : preset === "MEDIUM"
           ? profile.bitemporal === "required"
-            ? "Postgres + Apache AGE (option Amine ADR-011) OU Graphiti+Neo4j"
-            : "Postgres + pgvector + Graphiti (option Meydeey)"
-          : "XTDB + Graphiti hybride (option C Chris) OU Postgres+AGE on-prem",
+            ? "Postgres + Apache AGE OU Graphiti + Neo4j"
+            : "Postgres + pgvector + Graphiti"
+          : "XTDB + Graphiti hybride OU Postgres + AGE on-prem",
     cost: preset === "LIGHT" ? (wantsBitemporal ? 10 : 0) : preset === "MEDIUM" ? 15 : 40,
     note:
       preset === "LIGHT"
-        ? "vault markdown source de vérité (Amine) recommandé"
+        ? "vault markdown comme source de vérité recommandé"
         : preset === "MEDIUM"
           ? "vault markdown source de vérité + projections rejouables"
           : "fact-store bitemporel natif, audit signé PL/pgSQL",
@@ -144,7 +144,7 @@ export function buildLayers(preset: Preset, profile: Profile): Layer[] {
       preset === "LIGHT"
         ? "SQLite + Chroma (déconseillé production)"
         : preset === "MEDIUM"
-          ? "XTDB hybride (option Chris), DuckDB+VSS"
+          ? "XTDB hybride, DuckDB + VSS"
           : "Datomic Pro, TerminusDB",
   };
 
@@ -164,7 +164,7 @@ export function buildLayers(preset: Preset, profile: Profile): Layer[] {
         ? "tout managé, démarrage en 2h"
         : preset === "MEDIUM"
           ? "souveraineté UE/FR, cascade T1/T2 économise ~70 % LLM"
-          : "souveraineté N4 + backup multi-continental P4 (Meydeey)",
+          : "souveraineté N4 + backup multi-continental P4",
     alternatives:
       preset === "LIGHT"
         ? "OpenAI API + OVH Public Cloud"

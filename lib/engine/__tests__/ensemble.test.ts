@@ -123,3 +123,43 @@ describe("buildEnsemble — déterminisme", () => {
     expect(buildEnsemble(profile)).toEqual(buildEnsemble(profile));
   });
 });
+
+describe("buildEnsemble — assumptions dynamiques (diff base ↔ variant)", () => {
+  it("ne montre PAS « Budget plafonné sous 50 €/mois » si l'utilisateur a déjà budget=lt50", () => {
+    const cost = variant(baseProfile({ budget: "lt50" }), "cost");
+    expect(cost.assumptions.some((a) => a.toLowerCase().includes("budget"))).toBe(false);
+  });
+
+  it("ne montre PAS « Audit désactivé » si l'utilisateur a déjà audit=no", () => {
+    const cost = variant(baseProfile({ audit: "no" }), "cost");
+    expect(cost.assumptions.some((a) => a.toLowerCase().includes("audit"))).toBe(false);
+  });
+
+  it("ne montre PAS « Compétences DevOps » si l'utilisateur a déjà techLevel=devops", () => {
+    const speed = variant(baseProfile({ techLevel: "devops" }), "speed");
+    expect(speed.assumptions.some((a) => a.toLowerCase().includes("devops"))).toBe(false);
+  });
+
+  it("montre une note explicite si l'utilisateur est déjà aligné sur la priorité", () => {
+    const speed = variant(
+      baseProfile({ techLevel: "devops", audit: "no", bitemporal: "no", budget: "lt50", modules: { bisect: 0, reversal: 0, prereg: 0, mel: 0, conflict: 0 } }),
+      "speed",
+    );
+    expect(speed.assumptions).toHaveLength(1);
+    expect(speed.assumptions[0]).toMatch(/aucun changement/i);
+  });
+
+  it("montre la sensibilité change avec les bons libellés", () => {
+    const sov = variant(baseProfile({ sensitivity: "internal" }), "sovereignty");
+    expect(sov.assumptions.some((a) => /interne.*→.*secret/u.test(a))).toBe(true);
+  });
+
+  it("compte les modules réellement modifiés (pas un libellé figé)", () => {
+    // Utilisateur a 2 modules déjà au max → le variant sovereignty doit pousser les 3 autres.
+    const sov = variant(
+      baseProfile({ modules: { bisect: 3, reversal: 3, prereg: 0, mel: 0, conflict: 0 } }),
+      "sovereignty",
+    );
+    expect(sov.assumptions.some((a) => /3 option/u.test(a))).toBe(true);
+  });
+});

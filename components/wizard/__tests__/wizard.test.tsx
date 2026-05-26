@@ -7,14 +7,15 @@ describe("Wizard", () => {
     localStorage.clear();
   });
 
-  it("affiche la première étape après hydratation", async () => {
+  it("affiche le mode Express par défaut avec les 5 questions", async () => {
     render(<Wizard />);
-    expect(await screen.findByText("Activité & échelle")).toBeInTheDocument();
+    expect(await screen.findByText("5 questions pour démarrer")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Express/u })).toHaveAttribute("aria-selected", "true");
   });
 
   it("propose les profils-types pré-remplis", async () => {
     render(<Wizard />);
-    await screen.findByText("Activité & échelle");
+    await screen.findByText("5 questions pour démarrer");
     expect(screen.getByRole("button", { name: "Coach indépendant" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cabinet juridique régulé" })).toBeInTheDocument();
   });

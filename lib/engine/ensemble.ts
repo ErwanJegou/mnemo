@@ -13,6 +13,8 @@ import {
   type Preset,
   type Profile,
   type Recommendation,
+  type Sensitivity,
+  type Budget,
 } from "./types";
 
 export const ENSEMBLE_VARIANT_IDS = ["sovereignty", "cost", "speed"] as const;
@@ -81,66 +83,137 @@ function modulesAt(target: "max" | "off"): Record<ModuleId, number> {
 }
 
 /** Applique les overrides d'un membre de l'ensemble au profil de base. */
-function applyVariant(
-  id: EnsembleVariantId,
-  base: Profile,
-): { profile: Profile; assumptions: string[] } {
+function applyVariant(id: EnsembleVariantId, base: Profile): Profile {
   switch (id) {
     case "sovereignty":
       return {
-        profile: {
-          ...base,
-          zone: base.zone === "maroc" ? "maroc" : "ue",
-          sensitivity: "secret",
-          audit: "required",
-          bitemporal: "required",
-          modules: modulesAt("max"),
-        },
-        assumptions: [
-          "Hébergement en zone UE / Maroc",
-          "Sensibilité traitée comme « secret »",
-          "Audit et bitemporel rendus obligatoires",
-          "Modules de gouvernance poussés au maximum",
-        ],
+        ...base,
+        zone: base.zone === "maroc" ? "maroc" : "ue",
+        sensitivity: "secret",
+        audit: "required",
+        bitemporal: "required",
+        modules: modulesAt("max"),
       };
     case "cost":
       return {
-        profile: {
-          ...base,
-          budget: "lt50",
-          audit: "no",
-          bitemporal: "no",
-          modules: modulesAt("off"),
-        },
-        assumptions: [
-          "Budget plafonné sous 50 €/mois",
-          "Audit et bitemporel désactivés",
-          "Modules avancés désactivés",
-        ],
+        ...base,
+        budget: "lt50",
+        audit: "no",
+        bitemporal: "no",
+        modules: modulesAt("off"),
       };
     case "speed":
       return {
-        profile: {
-          ...base,
-          techLevel: "devops",
-          audit: "no",
-          bitemporal: "no",
-          budget: "lt50",
-          modules: modulesAt("off"),
-        },
-        assumptions: [
-          "Compétences DevOps disponibles",
-          "Audit et bitemporel désactivés",
-          "Budget plafonné sous 50 €/mois",
-          "Modules avancés désactivés",
-        ],
+        ...base,
+        techLevel: "devops",
+        audit: "no",
+        bitemporal: "no",
+        budget: "lt50",
+        modules: modulesAt("off"),
       };
   }
 }
 
+const SENSITIVITY_LABEL: Record<Sensitivity, string> = {
+  public: "publique",
+  internal: "interne",
+  confidential: "confidentielle",
+  secret: "secret",
+};
+
+const BUDGET_LABEL: Record<Budget, string> = {
+  lt50: "< 50 €/mois",
+  "50to200": "50 – 200 €/mois",
+  "200to500": "200 – 500 €/mois",
+  "500to2k": "500 – 2 000 €/mois",
+  gt2k: "> 2 000 €/mois",
+};
+
+/**
+ * Décrit les changements réellement appliqués au profil de base. Si l'utilisateur
+ * était déjà aligné sur la priorité du variant (ex. budget déjà < 50 € pour le
+ * variant « coût »), la liste est plus courte — voire vide → fallback explicite.
+ */
+function describeVariantChanges(base: Profile, variant: Profile): string[] {
+  const out: string[] = [];
+
+  if (base.zone !== variant.zone) {
+    const zoneLabel =
+      variant.zone === "ue"
+        ? "Union européenne"
+        : variant.zone === "maroc"
+          ? "Maroc"
+          : variant.zone === "us"
+            ? "États-Unis"
+            : "autre zone";
+    out.push(`Hébergement forcé en ${zoneLabel}`);
+  }
+
+  if (base.sensitivity !== variant.sensitivity) {
+    out.push(
+      `Sensibilité ${SENSITIVITY_LABEL[base.sensitivity]} → ${SENSITIVITY_LABEL[variant.sensitivity]}`,
+    );
+  }
+
+  if (base.audit !== variant.audit) {
+    if (variant.audit === "required") out.push("Audit rendu obligatoire");
+    else if (variant.audit === "no") out.push("Audit désactivé");
+    else out.push("Audit ramené à « souhaité »");
+  }
+
+  if (base.bitemporal !== variant.bitemporal) {
+    if (variant.bitemporal === "required") out.push("Historique des décisions rendu obligatoire");
+    else if (variant.bitemporal === "no") out.push("Historique des décisions désactivé");
+    else out.push("Historique des décisions ramené à « souhaité »");
+  }
+
+  if (base.budget !== variant.budget) {
+    out.push(`Budget ${BUDGET_LABEL[base.budget]} → ${BUDGET_LABEL[variant.budget]}`);
+  }
+
+  if (base.techLevel !== variant.techLevel) {
+    if (variant.techLevel === "devops") out.push("Compétences DevOps assumées disponibles");
+    else if (variant.techLevel === "none") out.push("Compétences techniques retirées");
+    else out.push(`Niveau technique ajusté en « ${variant.techLevel} »`);
+  }
+
+  const moduleDiff = countModuleDiff(base.modules, variant.modules);
+  if (moduleDiff.maxed > 0) {
+    const s = moduleDiff.maxed > 1 ? "s" : "";
+    out.push(`${moduleDiff.maxed} option${s} avancée${s} poussée${s} au maximum`);
+  }
+  if (moduleDiff.turnedOff > 0) {
+    const s = moduleDiff.turnedOff > 1 ? "s" : "";
+    out.push(`${moduleDiff.turnedOff} option${s} avancée${s} désactivée${s}`);
+  }
+
+  if (out.length === 0) {
+    out.push("Aucun changement — votre profil est déjà aligné sur cette priorité.");
+  }
+
+  return out;
+}
+
+function countModuleDiff(
+  base: Record<ModuleId, number>,
+  variant: Record<ModuleId, number>,
+): { maxed: number; turnedOff: number } {
+  let maxed = 0;
+  let turnedOff = 0;
+  for (const mod of MODULES) {
+    const b = base[mod.id];
+    const v = variant[mod.id];
+    if (b === v) continue;
+    if (v >= mod.maxLevel && b < mod.maxLevel) maxed += 1;
+    if (v === 0 && b > 0) turnedOff += 1;
+  }
+  return { maxed, turnedOff };
+}
+
 function buildVariant(id: EnsembleVariantId, base: Profile): EnsembleVariant {
   const meta = VARIANT_META[id];
-  const { profile, assumptions } = applyVariant(id, base);
+  const profile = applyVariant(id, base);
+  const assumptions = describeVariantChanges(base, profile);
   return {
     id,
     label: meta.label,
