@@ -108,6 +108,27 @@ export function SolutionForm({ action, initial, submitLabel, errors = {} }: Prop
           />
         </Field>
 
+        <Field
+          id="volume_assumptions"
+          label="Hypothèses de volume (JSON)"
+          hint='Exemple : {"image_per_month": 1000, "page_per_month": 500}'
+          error={errors.volume_assumptions}
+          className="col-span-full"
+        >
+          <textarea
+            id="volume_assumptions"
+            name="volume_assumptions"
+            rows={3}
+            defaultValue={
+              initial?.volume_assumptions !== undefined
+                ? JSON.stringify(initial.volume_assumptions, null, 2)
+                : ""
+            }
+            className="w-full rounded-input border border-outline-variant bg-surface-container-lowest px-3 py-2 font-mono text-body-sm text-on-surface focus:border-primary focus:outline-none"
+            placeholder='{"image_per_month": 1000}'
+          />
+        </Field>
+
         <Field id="estimated_setup_minutes" label="Setup estimé (minutes)" error={errors.estimated_setup_minutes}>
           <Input
             id="estimated_setup_minutes"
