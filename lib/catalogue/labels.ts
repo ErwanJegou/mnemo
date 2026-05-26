@@ -131,7 +131,16 @@ const EUR_FMT = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 0,
 });
 
-/** Formate un montant avec son unité. Cas particulier : modèle 'free' → "—". */
+/**
+ * Formate un montant avec son unité.
+ * Cas particuliers :
+ * - `free` → "Gratuit"
+ * - `contact` → "Sur devis"
+ * - `self_host` → "Self-hosted (+ infra)" — le logiciel est gratuit, le coût
+ *   éventuel saisi sur `base_price_eur` représente l'infra et est masqué ici
+ *   pour ne pas le confondre avec un prix logiciel. L'infra est modélisée
+ *   séparément via `infra_targets` et `brick_infra_targets`.
+ */
 export function formatPrice(
   amountEur: number,
   unit: string,
@@ -139,6 +148,7 @@ export function formatPrice(
 ): string {
   if (pricingModel === "free") return "Gratuit";
   if (pricingModel === "contact") return "Sur devis";
+  if (pricingModel === "self_host") return "Self-hosted (+ infra)";
   if (amountEur === 0) return `0 €/${unit}`;
   return `${EUR_FMT.format(amountEur)} / ${unit}`;
 }
