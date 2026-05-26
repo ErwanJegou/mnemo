@@ -52,3 +52,15 @@ export const VOLUME_UNIT_SLIDER_BOUNDS: Record<VolumeKey, SliderBounds> = {
   "1k_tokens_per_month": { min: 10, max: 100000, step: 10 },
   requete_per_month: { min: 10, max: 100000, step: 10 },
 };
+
+// Accès sécurisé par clé arbitraire (évite les casts `as VolumeKey` côté appelant).
+
+/** Retourne le libellé UI pour une clé de volume, ou la clé brute si inconnue. */
+export function labelFor(key: string): string {
+  return (VOLUME_UNIT_LABELS as Record<string, string | undefined>)[key] ?? key;
+}
+
+/** Retourne les bornes slider pour une clé de volume, ou undefined si inconnue. */
+export function boundsFor(key: string): SliderBounds | undefined {
+  return (VOLUME_UNIT_SLIDER_BOUNDS as Record<string, SliderBounds | undefined>)[key];
+}
