@@ -21,12 +21,20 @@ export function volumeKeyForCostUnit(costUnit: string): string | null {
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
+    .replace(/[\u0300-\u036F]/g, "");
   return `${normalized}_per_month`;
 }
 
+/** Clés connues d'hypothèses de volume. Sert à typer strictement les maps de libellés et bornes. */
+export type VolumeKey =
+  | "image_per_month"
+  | "page_per_month"
+  | "minute_per_month"
+  | "1k_tokens_per_month"
+  | "requete_per_month";
+
 /** Libellés FR pour les clés de volume connues (UI sliders). */
-export const VOLUME_UNIT_LABELS: Record<string, string> = {
+export const VOLUME_UNIT_LABELS: Record<VolumeKey, string> = {
   image_per_month: "Images par mois",
   page_per_month: "Pages par mois",
   minute_per_month: "Minutes (audio) par mois",
@@ -37,7 +45,7 @@ export const VOLUME_UNIT_LABELS: Record<string, string> = {
 type SliderBounds = { min: number; max: number; step: number };
 
 /** Bornes du slider pour chaque clé de volume connue. */
-export const VOLUME_UNIT_SLIDER_BOUNDS: Record<string, SliderBounds> = {
+export const VOLUME_UNIT_SLIDER_BOUNDS: Record<VolumeKey, SliderBounds> = {
   image_per_month: { min: 10, max: 100000, step: 10 },
   page_per_month: { min: 10, max: 50000, step: 10 },
   minute_per_month: { min: 30, max: 6000, step: 30 },
