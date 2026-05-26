@@ -54,7 +54,7 @@ function parseVolumeAssumptions(
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     return { ok: false, error: "Doit être un objet JSON { clé: nombre }." };
   }
-  const result: Record<string, number> = {};
+  const result: Record<string, number> = Object.create(null);
   for (const [k, v] of Object.entries(parsed)) {
     if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
       return { ok: false, error: `Valeur invalide pour "${k}" (nombre ≥ 0 attendu).` };

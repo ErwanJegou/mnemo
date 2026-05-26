@@ -62,4 +62,16 @@ describe("parseSolutionForm — volume_assumptions", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.volume_assumptions).toBeDefined();
   });
+
+  it("accepte des clés exotiques comme __proto__ sans les perdre", () => {
+    const r = parseSolutionForm(
+      valid({ volume_assumptions: '{"__proto__": 100, "image_per_month": 50}' }),
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data.volume_assumptions.image_per_month).toBe(50);
+      // La clé __proto__ doit être préservée (Object.create(null) évite la pollution)
+      expect(Object.prototype.hasOwnProperty.call(r.data.volume_assumptions, "__proto__")).toBe(true);
+    }
+  });
 });
