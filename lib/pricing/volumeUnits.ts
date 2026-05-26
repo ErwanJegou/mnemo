@@ -17,8 +17,9 @@ export function isFixedCostUnit(costUnit: string): boolean {
  */
 export function volumeKeyForCostUnit(costUnit: string): string | null {
   if (isFixedCostUnit(costUnit)) return null;
-  const normalized = costUnit
-    .trim()
+  const trimmed = costUnit.trim();
+  if (trimmed === "") return null;
+  const normalized = trimmed
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036F]/g, "");
@@ -42,7 +43,7 @@ export const VOLUME_UNIT_LABELS: Record<VolumeKey, string> = {
   requete_per_month: "Requêtes par mois",
 };
 
-type SliderBounds = { min: number; max: number; step: number };
+export type SliderBounds = { min: number; max: number; step: number };
 
 /** Bornes du slider pour chaque clé de volume connue. */
 export const VOLUME_UNIT_SLIDER_BOUNDS: Record<VolumeKey, SliderBounds> = {

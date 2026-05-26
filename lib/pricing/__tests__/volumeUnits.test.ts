@@ -41,6 +41,10 @@ describe("volumeKeyForCostUnit", () => {
   it("retourne null pour les unités fixes", () => {
     expect(volumeKeyForCostUnit("mois")).toBeNull();
   });
+  it("retourne null pour une chaîne vide ou des espaces seulement", () => {
+    expect(volumeKeyForCostUnit("")).toBeNull();
+    expect(volumeKeyForCostUnit("   ")).toBeNull();
+  });
 });
 
 describe("VOLUME_UNIT_LABELS", () => {

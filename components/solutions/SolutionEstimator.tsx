@@ -1,7 +1,6 @@
-// components/solutions/SolutionEstimator.tsx
 "use client";
 
-import { useMemo, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { estimateSolution, type EstimateLine } from "@/lib/pricing/estimateSolution";
@@ -38,6 +37,9 @@ export function SolutionEstimator({
   defaultVolumes,
 }: Props): ReactElement {
   const [volumes, setVolumes] = useState<Record<string, number>>(defaultVolumes);
+  useEffect(() => {
+    setVolumes(defaultVolumes);
+  }, [defaultVolumes]);
 
   const volumeKeys = useMemo(() => {
     const keys = new Set<string>();
