@@ -7,6 +7,7 @@ import {
   COMPLEXITY_TONE,
 } from "@/lib/catalogue/labels";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { estimateSolution } from "@/lib/pricing/estimateSolution";
 
 // La page d'accueil est orientée PROBLÈME, pas produit : on demande à
 // l'utilisateur ce qu'il veut faire, et on lui propose une solution clé en main
@@ -27,8 +28,45 @@ export default async function HomePage(): Promise<ReactElement> {
     .select("*")
     .eq("status", "validated")
     .order("position", { ascending: true });
-
   if (error !== null) throw error;
+
+  // Pour chaque solution validée on charge ses étapes + briques recommandées
+  // + ratings, et on calcule l'estimation par défaut à afficher sur la card.
+  const solutionIds = solutions.map((s) => s.id);
+  const { data: steps, error: stepsErr } =
+    solutionIds.length > 0
+      ? await supabase.from("solution_steps").select("*").in("solution_id", solutionIds)
+      : { data: [], error: null as null };
+  if (stepsErr !== null) throw stepsErr;
+
+  const recommendedBrickIds = Array.from(
+    new Set(
+      steps
+        .map((s) => s.recommended_brick_id)
+        .filter((id): id is string => id !== null),
+    ),
+  );
+
+  const [bricksRes, ratingsRes] = await Promise.all([
+    recommendedBrickIds.length > 0
+      ? supabase.from("components").select("*").in("id", recommendedBrickIds)
+      : Promise.resolve({ data: [], error: null as null }),
+    recommendedBrickIds.length > 0
+      ? supabase
+          .from("brick_quality_ratings")
+          .select("*")
+          .in("brick_id", recommendedBrickIds)
+      : Promise.resolve({ data: [], error: null as null }),
+  ]);
+  if (bricksRes.error !== null) throw bricksRes.error;
+  if (ratingsRes.error !== null) throw ratingsRes.error;
+
+  const stepsBySolution = new Map<string, typeof steps>();
+  for (const s of steps) {
+    const arr = stepsBySolution.get(s.solution_id) ?? [];
+    arr.push(s);
+    stepsBySolution.set(s.solution_id, arr);
+  }
 
   return (
     <main className="min-h-screen bg-surface">
@@ -80,15 +118,28 @@ export default async function HomePage(): Promise<ReactElement> {
                       <p className="text-body-sm text-on-surface-variant">
                         {s.problem_statement}
                       </p>
-                      <div className="flex flex-wrap items-center gap-3 pt-2 font-mono text-xs text-on-surface-variant">
-                        {s.audience !== null ? <span>👥 {s.audience}</span> : null}
-                        {s.total_price_estimate_eur !== null ? (
-                          <span>≈ {EUR.format(s.total_price_estimate_eur)}/mois</span>
-                        ) : null}
-                        {s.estimated_setup_minutes !== null ? (
-                          <span>⏱ ~{s.estimated_setup_minutes} min de setup</span>
-                        ) : null}
-                      </div>
+                      {(() => {
+                        const est = estimateSolution({
+                          steps: stepsBySolution.get(s.id) ?? [],
+                          bricks: bricksRes.data,
+                          ratings: ratingsRes.data,
+                          volumes: s.volume_assumptions ?? {},
+                        });
+                        return (
+                          <div className="flex flex-wrap items-center gap-3 pt-2 font-mono text-xs text-on-surface-variant">
+                            {s.audience !== null ? <span>👥 {s.audience}</span> : null}
+                            <span>
+                              ≈{" "}
+                              {est.totalMonthlyEur === null
+                                ? "sur devis"
+                                : `${EUR.format(est.totalMonthlyEur)}/mois`}
+                            </span>
+                            {s.estimated_setup_minutes !== null ? (
+                              <span>⏱ ~{s.estimated_setup_minutes} min de setup</span>
+                            ) : null}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </Card>
